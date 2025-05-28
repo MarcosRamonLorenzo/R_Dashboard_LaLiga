@@ -1,0 +1,224 @@
+---
+title:  LIGA ESPAÑOLA 1970 - 2016
+format: html
+editor: visual
+
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    social: menu
+    source_code: https://github.com/walkerke/neighborhood_diversity
+    theme:
+      version: 4
+      bg: "#EEEEEE"
+      fg: "#ff4b44" 
+      primary: "#ff4b44"
+      navbar-bg: "#ff4b44"
+      base_font: 
+        google: Prompt
+      heading_font:
+        google: Sen
+      code_font:
+        google: 
+          # arguments to sass::font_google() 
+          family: JetBrains Mono
+          local: false
+runtime: shiny
+
+
+---
+
+```{r setup , include=FALSE}
+
+library(shiny)
+library(plotly)
+library(leaflet)
+library(tidyverse)
+library(sf)
+library(highcharter)
+library(plotly)
+library(DT)
+library(janitor)
+
+```
+
+
+
+
+
+```{r}
+df_LaLiga = read.csv('LaLiga.csv')
+```
+
+
+Inicio
+======================================================================
+
+
+<div  style="text-align: center; font-size:3em ; font-weight:bold ; margin-top:30px; ">LIGA ESPAÑOLA 1970 - 2016</div>
+<p style="display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 6rem;margin-top:30px">
+  <img src="img/LaLigaLogo.png" style="width:20rem"/>
+  <img src="img/messi.png" style="width:20rem"/>
+</p>
+
+
+
+Goles
+======================================================================
+
+Column {data-width=600}
+-----------------------------------------------------------------------
+
+### Top 10 equipos con más goles a favor
+
+
+```{r}
+top_goals <- df_LaLiga %>%
+  group_by(club) %>%
+  summarise(total_goles = sum(goals_scored, na.rm = TRUE)) %>%
+  arrange(desc(total_goles)) %>%
+  slice_head(n = 10)
+
+ggplot(top_goals, aes(x = reorder(club, -total_goles), y = total_goles, fill = club)) +
+  geom_col() +
+  labs(title = "10 equipos con más goles a favor",
+       x = "Equipo", y = "Goles a favor") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+Column
+-----------------------------------------------------------------------
+
+### Top 10 equipos con más goles a favor
+
+
+```{r}
+conceded_goals <- df_LaLiga %>%
+  group_by(club) %>%
+  summarise(total_goles = sum(goals_conceded, na.rm = TRUE)) %>%
+  arrange(desc(total_goles)) %>%
+  slice_head(n = 10)
+
+ggplot(conceded_goals, aes(x = reorder(club, -total_goles), y = total_goles, fill = club)) +
+  geom_col() +
+  labs(title = "10 equipos con más goles en contra",
+       x = "Equipo", y = "Goles en contra") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Puntos
+======================================================================
+
+Column {data-width=600}
+-----------------------------------------------------------------------
+
+### Top 10 equipos con más goles a favor
+
+
+```{r}
+top_goals <- df_LaLiga %>%
+  group_by(club) %>%
+  summarise(total_goles = sum(goals_scored, na.rm = TRUE)) %>%
+  arrange(desc(total_goles)) %>%
+  slice_head(n = 10)
+
+ggplot(top_goals, aes(x = reorder(club, -total_goles), y = total_goles, fill = club)) +
+  geom_col() +
+  labs(title = "Top 10 equipos con más goles a favor",
+       x = "Equipo", y = "Goles a favor") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+### Goles en casa vs fuera
+
+
+```{r}
+
+
+```
+
+Column {.tabset data-width=400}
+-----------------------------------------------------------------------
+
+### Puntos por temporada: Real Madrid vs Barcelona
+
+
+```{r}
+#| title: "Puntos por temporada"
+plot_ly(df_LaLiga, x=~year, y=~points, color=~club, colors=c('red','blue'),
+        mode='lines+markers', type='scatter') %>% layout(title='Puntos por temporada', xaxis=list(title='Año'), yaxis=list(title='Puntos'))
+```
+
+
+
+Campeonatos
+======================================================================
+
+Column 
+-----------------------------------------------------------------------
+
+```{r}
+
+
+champions <- df_LaLiga %>%
+  group_by(season) %>%
+  filter(points == max(points)) %>%
+  ungroup() %>%
+  count(club) %>%
+  arrange(desc(n))
+
+plot_ly(champions, labels = ~club, values = ~n, type = 'pie',
+        textinfo = 'label+percent', insidetextorientation = 'radial') %>%
+  layout(title = "Distribución de Campeonatos por Club")
+
+```
+
+
+
+Column 
+-----------------------------------------------------------------------
+
+```{r}
+champion_points <- df_LaLiga %>%
+  group_by(season) %>%
+  filter(points == max(points)) %>%
+  ungroup() %>%
+  mutate(año = as.numeric(substr(season, 1, 4)))
+
+plot_ly(champion_points, x = ~año, y = ~points, type = 'bar',
+        marker = list(color = 'steelblue')) %>%
+  layout(title = "Puntos del Campeón por Temporada",
+         xaxis = list(title = "Año"),
+         yaxis = list(title = "Puntos"))
+```
+
+
+
+   
+
+
