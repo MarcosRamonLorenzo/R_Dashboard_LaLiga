@@ -8,7 +8,7 @@ output:
     orientation: columns
     vertical_layout: fill
     social: menu
-    source_code: https://github.com/walkerke/neighborhood_diversity
+    source_code: https://github.com/MarcosRamonLorenzo/R_Dashboard_LaLiga
     theme:
       version: 4
       bg: "#EEEEEE"
@@ -123,7 +123,7 @@ ggplot(conceded_goals, aes(x = reorder(club, -total_goles), y = total_goles, fil
 
 # Puntos
 
-## Column {.tabset data-width="700"}
+## Column {.tabset data-width="550"}
 
 ### Top 10 Equipos con Más Puntos Totales en LaLiga 1990-2017
 
@@ -168,7 +168,7 @@ df_club_ts <- df_LaLiga %>%
 ggplot(df_club_ts, aes(x = start_year, y = avg_points, color = club)) +
   geom_line(size = 1) +
   labs(title = "Evolución de puntos (Top 8 clubes con más puntos totales)",
-       x = "Temporada (año de inicio)",
+       x = "Década",
        y = "Puntos promedio por temporada",
        color = "Club") +
   theme_minimal() +
@@ -177,22 +177,22 @@ ggplot(df_club_ts, aes(x = start_year, y = avg_points, color = club)) +
 
 
 
-## Column { data-width="300"}
+## Column { data-width="450"}
 
 ### Media puntos por temporada
 
 ```{r}
 # Histograma de la distribución de puntos
 ggplot(df_LaLiga, aes(x = points)) +
-  geom_histogram(binwidth = 5, fill = "steelblue", color = "white") +
+  geom_histogram(binwidth = 5, fill = "#454AFF", color = "white") +
   geom_vline(aes(xintercept = mean(points)), 
-             color = "red", linetype = "dashed", size = 1) +
+             color = "#ff4b44", linetype = "dashed", size = 1) +
   labs(title = "Distribución de Puntos en LaLiga",
        x = "Puntos por temporada", y = "Frecuencia") +
   theme_minimal() +
   annotate("text", x = mean(df_LaLiga$points) + 10, y = 100, 
            label = paste("Media:", round(mean(df_LaLiga$points), 1)), 
-           color = "red")
+           color = "#ff4b44")
 ```
 
 
@@ -246,7 +246,7 @@ campeon_por_temp <- df_LaLiga %>%
   arrange(año)
 
 plot_ly(campeon_por_temp, x = ~año, y = ~points,
-        type = 'scatter', mode = 'lines+markers',
+        type = 'scatter', mode = 'markers',
         text = ~paste(club, "-", season),
         line = list(color = 'darkorange')) %>%
   layout(
@@ -267,8 +267,91 @@ champion_points <- df_LaLiga %>%
   mutate(año = as.numeric(substr(season, 1, 4)))
 
 plot_ly(champion_points, x = ~año, y = ~points, type = 'bar',
-        marker = list(color = 'steelblue')) %>%
+        marker = list(color = '#45D986')) %>%
   layout(
          xaxis = list(title = "Año"),
          yaxis = list(title = "Puntos"))
 ```
+
+
+
+
+
+
+
+
+# Partidos
+
+## Column
+
+### Partidos Ganados, Empatados y Perdidos por Club
+
+```{r}
+df_partidos <- df_LaLiga %>%
+  group_by(club) %>%
+  summarise(Ganados = sum(matches_won, na.rm = TRUE),
+            Empatados = sum(matches_drawn, na.rm = TRUE),
+            Perdidos = sum(matches_lost, na.rm = TRUE)) %>%
+            slice_head(n = 20) %>% 
+  pivot_longer(cols = c(Ganados, Empatados, Perdidos), 
+               names_to = "Resultado", values_to = "Cantidad")
+
+ggplot(df_partidos, aes(x = reorder(club, -Cantidad), y = Cantidad, fill = Resultado)) +
+  geom_bar(stat = "identity") +
+  labs(
+       x = "Club", y = "Cantidad de Partidos") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+## Column
+
+### Mapa de calor total de victorias por club 
+
+
+```{r}
+club_coords <- tibble::tibble(
+  club = c("Real Madrid", "Barcelona", "Atlético de Madrid", "Valencia", "Sevilla",
+           "Athletic Club", "Real Sociedad", "Villarreal", "Espanyol", "Celta Vigo",
+           "Betis", "Zaragoza", "Deportivo", "Málaga", "Levante", "Getafe", "Osasuna",
+           "Alavés", "Rayo Vallecano", "Mallorca"),
+  ciudad = c("Madrid", "Barcelona", "Madrid", "Valencia", "Sevilla",
+             "Bilbao", "San Sebastián", "Villarreal", "Barcelona", "Vigo",
+             "Sevilla", "Zaragoza", "A Coruña", "Málaga", "Valencia", "Getafe", "Pamplona",
+             "Vitoria", "Madrid", "Palma"),
+  lat = c(40.4168, 41.3874, 40.4168, 39.4699, 37.3886,
+          43.2630, 43.3183, 39.9363, 41.4036, 42.2406,
+          37.3763, 41.6488, 43.3623, 36.7213, 39.4667, 40.3082, 42.8125,
+          42.8469, 40.3926, 39.5696),
+  lon = c(-3.7038, 2.1686, -3.7038, -0.3763, -5.9823,
+          -2.9350, -1.9748, -0.1034, 2.1744, -8.7207,
+          -5.9869, -0.8891, -8.4115, -4.4213, -0.3750, -3.7327, -1.6458,
+          -2.6716, -3.6587, 2.6502)
+)
+
+# Total de victorias por club
+victorias <- df_LaLiga %>%
+  group_by(club) %>%
+  summarise(total_wins = sum(matches_won, na.rm = TRUE))
+
+# Unimos con coordenadas
+map_data <- left_join(club_coords, victorias, by = "club")
+
+# Mapa de calor con círculos proporcionales
+leaflet(map_data) %>%
+  addTiles() %>%
+  addCircleMarkers(
+    lat = ~lat, lng = ~lon,
+    radius = ~sqrt(total_wins) * 0.8,
+    color = "#ff4b44", stroke = FALSE, fillOpacity = 0.6,
+    popup = ~paste(club, "<br>Victorias:", total_wins)
+  ) %>%
+  addLegend("bottomright", colors = "#ff4b44", labels = "Más victorias", title = "Clubes LaLiga")
+```
+
+
+
+
+
+
+
