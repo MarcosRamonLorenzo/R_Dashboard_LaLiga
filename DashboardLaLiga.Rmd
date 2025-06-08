@@ -262,9 +262,10 @@ plot_ly(campeon_por_temp, x = ~año, y = ~points,
 ```{r}
 champion_points <- df_LaLiga %>%
   group_by(season) %>%
-  filter(points == max(points)) %>%
+  slice_max(order_by = points, n = 1, with_ties = FALSE) %>%
   ungroup() %>%
   mutate(año = as.numeric(substr(season, 1, 4)))
+
 
 plot_ly(champion_points, x = ~año, y = ~points, type = 'bar',
         marker = list(color = '#45D986')) %>%
