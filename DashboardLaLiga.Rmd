@@ -1,5 +1,5 @@
 ---
-title:  LIGA ESPAÑOLA 1970 - 2016
+title:  LIGA ESPAÑOLA 1970 - 2017
 format: html
 editor: visual
 
@@ -61,7 +61,8 @@ datatable(
   df_LaLiga,
   options = list(
     pageLength = nrow(df_LaLiga),  
-    scrollX = TRUE 
+    scrollX = TRUE,
+    lengthChange = FALSE
   )
 )
 ```
@@ -125,7 +126,7 @@ ggplot(conceded_goals, aes(x = reorder(club, -total_goles), y = total_goles, fil
 
 ## Column {.tabset data-width="550"}
 
-### Top 10 Equipos con Más Puntos Totales en LaLiga 1990-2017
+### Top 10 Equipos con Más Puntos Totales
 
 ```{r}
 heatmap_data <- df_LaLiga %>%
@@ -292,10 +293,14 @@ df_partidos <- df_LaLiga %>%
   group_by(club) %>%
   summarise(Ganados = sum(matches_won, na.rm = TRUE),
             Empatados = sum(matches_drawn, na.rm = TRUE),
-            Perdidos = sum(matches_lost, na.rm = TRUE)) %>%
-            slice_head(n = 20) %>% 
-  pivot_longer(cols = c(Ganados, Empatados, Perdidos), 
-               names_to = "Resultado", values_to = "Cantidad")
+            Perdidos = sum(matches_lost, na.rm = TRUE),
+            Total = Ganados + Empatados + Perdidos) %>%
+  arrange(desc(Total)) %>%
+  head(20) %>%
+  select(-Total) %>%
+  pivot_longer(cols = c(Ganados, Empatados, Perdidos),
+               names_to = "Resultado",
+               values_to = "Cantidad")
 
 ggplot(df_partidos, aes(x = reorder(club, -Cantidad), y = Cantidad, fill = Resultado)) +
   geom_bar(stat = "identity") +
